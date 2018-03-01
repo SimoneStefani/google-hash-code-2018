@@ -59,7 +59,7 @@ public class InputParser {
 
                 Ride current = null;
                 for (Ride r : this.rides) {
-                    if (current == null || v.reward(r) > v.reward(current)) {
+                    if (current == null || v.reward(r) < v.reward(current)) {
                         current = r;
                     }
                 }
@@ -149,32 +149,6 @@ public class InputParser {
                 bw.newLine();
             }
 
-//            // write the total number of caches
-//            // replace with correct value if some caches are not used
-//            bw.write(String.valueOf(numCaches));
-//            bw.newLine();
-//
-//            int counter = 0;
-//
-//            // write output here
-//            for (int i = 0; i < this.numCaches; i++) {
-//                if (caches[i].capacity == this.capacity) {
-//                    continue;
-//                }
-//                StringBuilder sb = new StringBuilder();
-//                sb.append(i);
-//                for (int id : caches[i].videos) {
-//                    sb.append(" " + id);
-//                }
-//
-//                bw.write(sb.toString());
-//                bw.newLine();
-//
-//                counter++;
-//            }
-//
-//            System.out.println("Caches used: " + counter);
-//            System.out.println(notServed + " requests not served");
 
             bw.flush();
             bw.close();

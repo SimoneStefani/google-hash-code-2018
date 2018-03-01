@@ -10,13 +10,6 @@ public class Vehicle {
     public int currentStep = 0;
     public int bonus;
 
-//    public Vehicle(int id, int[] rides, int x, int y, int bonus) {
-//        this.id = id;
-//        this.rides = rides;
-//        this.x = x;
-//        this.y = y;
-//        this.bonus = bonus;
-//    }
 
     public Vehicle(int id, int x, int y, int bonus) {
         this.id = id;
@@ -27,17 +20,24 @@ public class Vehicle {
     }
 
     public int reward(Ride r) {
-        int estimate = r.rideDistance();
+//        int estimate = r.rideDistance();
+        int estimate = distanceToRide(r);
+        int deltaWait = this.currentStep + this.distanceToRide(r) - r.earlyStart;
 
-        if (r.rideDistance() + distanceToRide(r) + this.currentStep > r.lateFinish) {
-            return 0;
+        if (deltaWait < 0) deltaWait = 0;
+
+        if (r.rideDistance() + distanceToRide(r) + this.currentStep + deltaWait > r.lateFinish) {
+            return Integer.MIN_VALUE;
         }
 
-        if (distanceToRide(r) + this.currentStep < r.earlyStart) {
-            estimate += this.bonus;
-        }
+        return estimate + deltaWait;
 
-        return estimate;
+//
+//        if (distanceToRide(r) + this.currentStep < r.earlyStart) {
+//            estimate += this.bonus;
+//        }
+//
+//        return estimate - deltaWait;
     }
 
     public int distanceToRide(Ride r) {
