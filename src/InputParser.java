@@ -22,6 +22,8 @@ public class InputParser {
      */
     public int numRows, numColumns, numVehicles, numRides, bonus, steps;
 
+    public int BONUS_TRESHOLD = 25;
+
     private List<Ride> rides;
     private Ride[] ridesDone;
     private List<Vehicle> vehicles;
@@ -54,17 +56,28 @@ public class InputParser {
 //            System.out.println(r);
 //        }
 
-        for (Vehicle v : this.vehicles) {
-            while (v.currentStep < this.steps) {
+        int tempCount = 0;
+        boolean done = false;
+
+        while (!done) {
+            done = true;
+            for (Vehicle v : this.vehicles) {
 
                 Ride current = null;
+
+                tempCount = 0;
                 for (Ride r : this.rides) {
+                    if (v.currentStep > r.lateFinish) continue;
+                    tempCount++;
                     if (current == null || v.reward(r) < v.reward(current)) {
                         current = r;
                     }
+
+                    if (tempCount > 50) break;
                 }
 
                 if (current == null) break;
+                if (v.currentStep < this.steps) done = false;
                 v.x = current.endCol;
                 v.y = current.endRow;
 
@@ -80,6 +93,8 @@ public class InputParser {
                 this.rides.remove(current);
             }
         }
+
+
     }
 
     /**

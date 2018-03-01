@@ -27,7 +27,7 @@ public class Vehicle {
         if (deltaWait < 0) deltaWait = 0;
 
         if (r.rideDistance() + distanceToRide(r) + this.currentStep + deltaWait > r.lateFinish) {
-            return Integer.MIN_VALUE;
+            return Integer.MAX_VALUE;
         }
 
         return estimate + deltaWait;
@@ -38,6 +38,24 @@ public class Vehicle {
 //        }
 //
 //        return estimate - deltaWait;
+    }
+
+    public int rewardBonus(Ride r) {
+        int estimate = r.rideDistance();
+//        int estimate = distanceToRide(r);
+        int deltaWait = this.currentStep + this.distanceToRide(r) - r.earlyStart;
+
+        if (deltaWait < 0) deltaWait = 0;
+
+        if (r.rideDistance() + distanceToRide(r) + this.currentStep + deltaWait > r.lateFinish) {
+            return Integer.MAX_VALUE;
+        }
+
+        if (distanceToRide(r) + this.currentStep < r.earlyStart) {
+            estimate += this.bonus;
+        }
+
+        return estimate - deltaWait;
     }
 
     public int distanceToRide(Ride r) {
