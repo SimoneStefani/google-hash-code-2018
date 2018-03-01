@@ -1,13 +1,13 @@
 /**
  * InputParser
- *
+ * <p>
  * Google HashCode 2017
  * Created by Marcel Eschmann, Cedric Seger and Simone Stefani on 01/03/2017.
  */
 
 import java.io.*;
-import java.util.PriorityQueue;
-import java.util.Scanner;
+import java.lang.reflect.Array;
+import java.util.*;
 
 public class InputParser {
 
@@ -20,21 +20,17 @@ public class InputParser {
     /**
      * Parsed input
      */
-    private int numVideos, numEndopoints, numRequests, numCaches, capacity;
+    public int numRows, numColumns, numVehicles, numRides, bonus, steps;
 
-    private int[] videos;
-    private Cache[] caches;
-    private Endpoint[] endpoints;
-    private PriorityQueue<Request> requests;
-
-    /**
-     * Helpers
-     */
-    public int ratio;
-    public int notServed = 0;
+    private List<Ride> rides;
+    private Ride[] ridesDone;
+    private List<Vehicle> vehicles;
+//    private Endpoint[] endpoints;
+//    private PriorityQueue<Request> requests;
 
     /**
      * Constructor
+     *
      * @param file
      */
     public InputParser(String file) {
@@ -48,36 +44,41 @@ public class InputParser {
      */
     public void run() {
 
-        Request[] rs;
+        this.rides.sort((o1, o2) -> {
+            if (o1.earlyStart < o2.earlyStart) return -1;
+            if (o1.earlyStart == o2.earlyStart) return 0;
+            return 1;
+        });
 
-        rs = this.requests.toArray(new Request[0]);
+//        for (Ride r : this.rides) {
+//            System.out.println(r);
+//        }
 
-        for (int i = 0; i < 6; i++) {
-            int counter = requests.size() / 4;
+        for (Vehicle v : this.vehicles) {
+            while (v.currentStep < this.steps) {
 
-            for (int j = 0; j < rs.length; j++) {
-                if (rs[j] == null) {
-                    continue;
+                Ride current = null;
+                for (Ride r : this.rides) {
+                    if (current == null || v.reward(r) > v.reward(current)) {
+                        current = r;
+                    }
                 }
-                if (counter < 0) {
-                    break;
+
+                if (current == null) break;
+                v.x = current.endCol;
+                v.y = current.endRow;
+
+                int deltaWait = v.currentStep + v.distanceToRide(current) - current.earlyStart;
+
+                v.currentStep += current.rideDistance() + v.distanceToRide(current);
+                if (deltaWait < 0) {
+                    v.currentStep += Math.abs(deltaWait);
                 }
-                counter--;
-                if (videos[rs[j].video] < this.ratio) {
-                    handleRequest(rs[j]);
-                    rs[j] = null;
-                }
+
+                v.rides.add(current);
+
+                this.rides.remove(current);
             }
-            this.ratio += 30;
-        }
-
-        for (int j = 0; j < rs.length; j++) {
-            if (rs[j] == null) {
-                continue;
-            }
-
-            handleRequest(rs[j]);
-            rs[j] = null;
         }
     }
 
@@ -90,114 +91,41 @@ public class InputParser {
         try {
             Scanner in = new Scanner(inputFile);
 
-            this.numVideos = in.nextInt();
-            this.numEndopoints = in.nextInt();
-            this.numRequests = in.nextInt();
-            this.numCaches = in.nextInt();
-            this.capacity = in.nextInt();
+            this.numRows = in.nextInt();
+            this.numColumns = in.nextInt();
+            this.numVehicles = in.nextInt();
+            this.numRides = in.nextInt();
+            this.bonus = in.nextInt();
+            this.steps = in.nextInt();
 
-            this.ratio = (numCaches * capacity) / numVideos;
+            // RIDES
+            this.rides = new ArrayList<>(this.numRides);
 
-            // CACHES
-            this.caches = new Cache[this.numCaches];
+            for (int i = 0; i < this.numRides; i++) {
+                int startRow = in.nextInt();
+                int startCol = in.nextInt();
+                int endRow = in.nextInt();
+                int endCol = in.nextInt();
+                int earlyStart = in.nextInt();
+                int lateFinish = in.nextInt();
+                this.rides.add(new Ride(i, startRow, startCol, endRow, endCol, earlyStart, lateFinish));
 
-            for (int i = 0; i < this.numCaches; i++) {
-                this.caches[i] = new Cache(this.capacity);
+//                System.out.println(this.rides[i]);
             }
 
-            // VIDEOS
-            this.videos = new int[numVideos];
+            this.vehicles = new ArrayList<>(this.numVehicles);
 
-            for (int i = 0; i < this.numVideos; i++) {
-                this.videos[i] = in.nextInt();
+            for (int j = 0; j < this.numVehicles; j++) {
+                this.vehicles.add(new Vehicle(j, 0, 0, this.bonus));
             }
 
-            // ENDPOINTS
-            this.endpoints = new Endpoint[this.numEndopoints];
-
-            for (int i = 0; i < this.numEndopoints; i++) {
-                Endpoint temp = new Endpoint();
-                temp.latency = in.nextInt();
-                int max = in.nextInt();
-
-                temp.cachesId = new int[max];
-                temp.cachesLatency = new int[max];
-
-                for (int j = 0; j < max; j++) {
-                    temp.cachesId[j] = in.nextInt();
-                    temp.cachesLatency[j] = in.nextInt();
-                }
-                this.endpoints[i] = temp;
-            }
-
-            // REQUESTS
-            this.requests = new PriorityQueue<Request>();
-
-            for (int i = 0; i < this.numRequests; i++) {
-                Request temp = new Request();
-                temp.video = in.nextInt();
-                temp.endpoint = in.nextInt();
-                temp.requests = in.nextInt();
-
-                int gain = endpoints[temp.endpoint].latency;
-
-
-                for (int t : endpoints[temp.endpoint].cachesLatency) {
-                    if (t < gain) {
-                        gain = t;
-                    }
-                }
-
-                temp.gain = ((endpoints[temp.endpoint].latency - gain) * temp.requests);
-
-                this.requests.add(temp);
-
-            }
 
             in.close();
 
         } catch (FileNotFoundException e) {
             // file not found.
-            System.out.printf("[ERROR] " + e.getMessage());
+            System.out.print("[ERROR] " + e.getMessage());
         }
-    }
-
-    public void handleRequest(Request r) {
-        int [] endpointCaches = endpoints[r.endpoint].cachesId;
-        int [] endpointLatencies = endpoints[r.endpoint].cachesLatency;
-
-        // If no caches available, return
-        if (endpointCaches.length == 0) {
-            return;
-        }
-
-        int videoSize = videos[r.video];
-        int cacheResult = -1;
-
-        // Search first suitable cache (enough size)
-        for (int i = 0; i < endpointCaches.length; i++) {
-            if (caches[endpointCaches[i]].capacity - videoSize > 0) {
-                cacheResult = i;
-                break;
-            }
-        }
-
-        if (cacheResult == -1) {
-            this.notServed++;
-            return;
-        }
-
-        // Search for cache with best improvement on latency
-        for (int j = cacheResult; j < endpointCaches.length; j++) {
-            if (caches[endpointCaches[j]].capacity - videoSize > 0) {
-                if (endpointLatencies[cacheResult] - endpointLatencies[j] > 0) {
-                    cacheResult = j;
-                }
-            }
-        }
-
-        caches[endpointCaches[cacheResult]].addVideo(r.video, videoSize);
-
     }
 
     /**
@@ -211,39 +139,49 @@ public class InputParser {
             out = new FileWriter(outputFile);
             BufferedWriter bw = new BufferedWriter(out);
 
-            // write the total number of caches
-            // replace with correct value if some caches are not used
-            bw.write(String.valueOf(numCaches));
-            bw.newLine();
-
-            int counter = 0;
-
-            // write output here
-            for (int i = 0; i < this.numCaches; i++) {
-                if (caches[i].capacity == this.capacity) {
-                    continue;
-                }
+            for (Vehicle v : this.vehicles) {
                 StringBuilder sb = new StringBuilder();
-                sb.append(i);
-                for (int id : caches[i].videos) {
-                    sb.append(" " + id);
+                sb.append(v.rides.size());
+                for (Ride r : v.rides) {
+                    sb.append(" " + r.id);
                 }
-
                 bw.write(sb.toString());
                 bw.newLine();
-
-                counter++;
             }
 
-            System.out.println("Caches used: " + counter);
-            System.out.println(notServed + " requests not served");
+//            // write the total number of caches
+//            // replace with correct value if some caches are not used
+//            bw.write(String.valueOf(numCaches));
+//            bw.newLine();
+//
+//            int counter = 0;
+//
+//            // write output here
+//            for (int i = 0; i < this.numCaches; i++) {
+//                if (caches[i].capacity == this.capacity) {
+//                    continue;
+//                }
+//                StringBuilder sb = new StringBuilder();
+//                sb.append(i);
+//                for (int id : caches[i].videos) {
+//                    sb.append(" " + id);
+//                }
+//
+//                bw.write(sb.toString());
+//                bw.newLine();
+//
+//                counter++;
+//            }
+//
+//            System.out.println("Caches used: " + counter);
+//            System.out.println(notServed + " requests not served");
 
             bw.flush();
             bw.close();
 
         } catch (IOException e) {
             // file not found.
-            System.out.printf("[ERROR] " + e.getMessage());
+            System.out.print("[ERROR] " + e.getMessage());
         }
 
 

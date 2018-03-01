@@ -7,7 +7,7 @@
 
 public class Main {
     public static void main(String[] args) {
-        String [] names = {"kittens.in", "me_at_the_zoo.in", "trending_today.in", "videos_worth_spreading.in"};
+        String [] names = {"a_example.in", "b_should_be_easy.in", "c_no_hurry.in", "d_metropolis.in", "e_high_bonus.in"};
 
         for (String file : names) {
             InputParser parser = new InputParser(file);
